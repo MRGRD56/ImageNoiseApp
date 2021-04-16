@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace ImageNoiseApp
 {
-    public class BitmapExtensions
+    public static class BitmapExtensions
     {
-        public void AddNoise(Bitmap image, int level)
+        public static void AddNoise(this Bitmap image, int level)
         {
             var random = new Random();
             for (var x = 0; x < image.Width; x++)
