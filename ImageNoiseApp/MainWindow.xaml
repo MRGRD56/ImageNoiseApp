@@ -19,12 +19,12 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <StackPanel Orientation="Horizontal" Margin="5" Grid.ColumnSpan="2">
-            <Button Content="Загрузить" Command="{Binding LoadFileCommand}"/>
-            <Button Content="Снимок экрана" Margin="5 0 0 0" Command="{Binding LoadScreenshotCommand}"/>
-            <Label Content="Уровень шума: "/>
+            <Button Content="Load" Command="{Binding LoadFileCommand}"/>
+            <Button Content="Screenshot" Margin="5 0 0 0" Command="{Binding LoadScreenshotCommand}"/>
+            <Label Content="Noise level: "/>
             <TextBox Text="{Binding NoiseLevel}" Width="35" VerticalContentAlignment="Center"/>
-            <Button Content="Генерировать" Margin="5 0 0 0" Command="{Binding GenerateCommand}"/>
-            <Button Content="Сохранить результат" Margin="5 0 0 0" Command="{Binding SaveResultCommand}"/>
+            <Button Content="Generate" Margin="5 0 0 0" Command="{Binding GenerateCommand}"/>
+            <Button Content="Save result" Margin="5 0 0 0" Command="{Binding SaveResultCommand}"/>
         </StackPanel>
         <Image Margin="3" Grid.Row="1" Source="{Binding OriginalImageSource}"/>
         <Image Margin="3" Grid.Row="1" Grid.Column="1" Source="{Binding ResultImageSource}"/>
