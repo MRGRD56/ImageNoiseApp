@@ -66,10 +66,16 @@ namespace ImageNoiseApp
 
         public Command GenerateCommand => new(_ => 
         {
+            if (NoiseLevel is < 0 or > 255)
+            {
+                MessageBox.Show("The noise level must be between 0 and 255!", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Stop);
+                return;
+            }
             var resultImage = GetBitmap(OriginalImageSource);
             resultImage.AddNoise(NoiseLevel);
             ResultImageSource = GetImageSource(resultImage);
-        });
+        }, _ => OriginalImageSource != null);
 
         public Command SaveResultCommand => new(_ => 
         {
@@ -78,10 +84,13 @@ namespace ImageNoiseApp
             if (saveFileDialog.ShowDialog() != true) return;
             var file = saveFileDialog.FileName;
             SaveBitmap(ResultImageSource, file);
-        });
+        }, _ => ResultImageSource != null);
 
         private static ImageSource GetImageSource(Bitmap bitmap)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            
             var memoryStream = new MemoryStream();
             bitmap.Save(memoryStream, ImageFormat.Bmp);
             var bitmapImage = new BitmapImage();
@@ -89,15 +98,26 @@ namespace ImageNoiseApp
             bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
             bitmapImage.StreamSource = memoryStream;
             bitmapImage.EndInit();
+            
+            stopwatch.Stop();
+            Debug.WriteLine($"GetImageSource: {stopwatch.ElapsedMilliseconds / 1000D} secs");
+            
             return bitmapImage;
         }
 
         private static Bitmap GetBitmap(ImageSource imageSource)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             using var memoryStream = new MemoryStream();
             var encoder = new BmpBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create((BitmapImage)imageSource));
             encoder.Save(memoryStream);
+            
+            stopwatch.Stop();
+            Debug.WriteLine($"GetBitmap: {stopwatch.ElapsedMilliseconds / 1000D} secs");
+
             return new Bitmap(memoryStream);
         }
 

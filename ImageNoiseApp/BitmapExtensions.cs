@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,23 +11,30 @@ namespace ImageNoiseApp
 {
     public static class BitmapExtensions
     {
-        public static void AddNoise(this Bitmap image, int level)
+        public static unsafe void AddNoise(this Bitmap image, int level)
         {
-            var random = new Random();
-            for (var x = 0; x < image.Width; x++)
-            {
-                for (var y = 0; y < image.Height; y++)
-                {
-                    var pixel = image.GetPixel(x, y);
-                    int r = pixel.R;
-                    int g = pixel.G;
-                    int b = pixel.B;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            
+            var bits = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-                    void DeformColorPart(ref int part, int noiseLevel)
+            var random = new Random();
+            for (var y = 0; y < image.Height; y++)
+            {
+                var positionPtr = (byte*) bits.Scan0 + y * bits.Stride;
+                for (var x = 0; x < image.Width; x++)
+                {
+                    var rPtr = positionPtr + 2;
+                    var gPtr = positionPtr + 1;
+                    var bPtr = positionPtr + 0;
+
+                    void DeformColorPart(byte* partPtr, int noiseLevel)
                     {
-                        var maxDownNoice = new List<int> { part, noiseLevel }.Min();
-                        var maxUpNoice = new List<int> { 255 - part, noiseLevel }.Min();
-                        part += random.Next(-maxDownNoice, maxUpNoice);
+                        var part = Convert.ToInt32(*partPtr);
+                        var minNoise = part < noiseLevel ? part : noiseLevel;//new List<int> { part, noiseLevel }.Min();
+                        var maxNoise = (255 - part) < noiseLevel ? 255 - part : noiseLevel;//new List<int> { 255 - part, noiseLevel }.Min();
+                        part += random.Next(-minNoise, maxNoise);
+                        *partPtr = Convert.ToByte(part);
                     }
 
                     void AddNoiseToColor(int noiseLevel)
@@ -34,16 +43,21 @@ namespace ImageNoiseApp
                         {
                             throw new ArgumentException("Value must be [0; 255]", nameof(noiseLevel));
                         }
-                        DeformColorPart(ref r, noiseLevel);
-                        DeformColorPart(ref g, noiseLevel);
-                        DeformColorPart(ref b, noiseLevel);
+                        DeformColorPart(rPtr, noiseLevel);
+                        DeformColorPart(gPtr, noiseLevel);
+                        DeformColorPart(bPtr, noiseLevel);
                     }
 
                     AddNoiseToColor(level);
 
-                    image.SetPixel(x, y, Color.FromArgb(r, g, b));
+                    positionPtr += 3;
                 }
             }
+            
+            image.UnlockBits(bits);
+            
+            stopwatch.Stop();
+            Debug.WriteLine($"AddNoise: {stopwatch.ElapsedMilliseconds / 1000D} secs");
         }
     }
 }
